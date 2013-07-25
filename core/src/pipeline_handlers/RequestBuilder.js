@@ -49,8 +49,23 @@ RequestBuilder.prototype = {
 		return ctx.next();
 	},
 
+	/**
+	Perform a delete
+	*/
+	delete: function(ctx, path) {
+		var xhr = createXhr();
+		var handler = new RequestHandler(xhr);
+
+		xhr.open('DELETE', this._endpoint + '/' + path);
+		this._addToken(xhr);
+
+		ctx.handler = handler;
+
+		return ctx.next();
+	},
+
 	_addToken: function(xhr) {
 		if (this._token != null)
-			xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+			xhr.setRequestHeader('Authorization', 'Bearer ' + this._token);
 	}
 };

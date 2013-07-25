@@ -22,10 +22,13 @@ PipeContext.prototype = {
 	}
 };
 
+// TODO: we could technically auto-generate the code for all of this.
+
 PipeContext.END = {
 	setToken: function() { return PipeContext.END; },
 	get: function() { return PipeContext.END; },
-	put: function() { return PipeContext.END; }
+	put: function() { return PipeContext.END; },
+	delete: function() { return PipeContext.END; }
 };
 
 var nextMethods = {
@@ -45,6 +48,12 @@ var nextMethods = {
 		var handler = this._nextHandler();
 
 		return handler.get.apply(handler, arguments);
+	},
+
+	delete: function() {
+		var handler = this._nextHandler();
+
+		return handler.delete.apply(handler, arguments);
 	}
 };
 
@@ -67,6 +76,11 @@ Pipeline.prototype = {
 
 	put: function() {
 		var ctx = new PipeContext(this._handlers, nextMethods.put, arguments);
+		return ctx.next();
+	},
+
+	delete: function() {
+		var ctx = new PipeContext(this._handlers, nextMethods.delete, arguments);
 		return ctx.next();
 	},
 
