@@ -1,3 +1,4 @@
+
 function RequestBuilder(endpoint) {
 	this._token = null;
 	this._endpoint = endpoint;
@@ -19,11 +20,12 @@ RequestBuilder.prototype = {
 	/**
 	Issues a get request for the specified path.
 	*/
-	get: function(ctx, path) {
+	get: function(ctx, path, responseType) {
 		var xhr = createXhr();
-		var handler = new XhrHandler(xhr);
+		var handler = new RequestHandler(xhr);
 
 		xhr.open('GET', this._endpoint + '/' + path);
+		xhr.responseType = responseType;
 		this._addToken(xhr);
 
 		ctx.handler = handler;
@@ -36,7 +38,7 @@ RequestBuilder.prototype = {
 	*/
 	put: function(ctx, path, data) {
 		var xhr = createXhr();
-		var handler = new XhrHandler(xhr);
+		var handler = new RequestHandler(xhr);
 
 		xhr.open('PUT', this._endpoint + '/' + path);
 		this._addToken(xhr);

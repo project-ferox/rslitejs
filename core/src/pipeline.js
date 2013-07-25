@@ -1,15 +1,16 @@
+
 function PipeContext(handlers, nextMehod, args) {
 	this._handlers = handlers;
 	this._next = nextMehod;
 
-	this._args = Array.prototype.slice.call(arguments, 0);
+	this._args = Array.prototype.slice.call(args, 0);
 	this._args.unshift(this);
 	this._i = 0;
 }
 
 PipeContext.prototype = {
 	next: function() {
-		this._next.apply(this, this._args);
+		return this._next.apply(this, this._args);
 	},
 
 	_nextHandler: function() {

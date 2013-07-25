@@ -1,4 +1,7 @@
-function XhrHandler(xhr) {
+
+// TODO: determine the various status codes and dispatch requests appropriately.
+// TODO: check content-type header and convert content appropriately.
+function RequestHandler(xhr) {
 	this._xhr = xhr;
 
 	xhr.onload = handlerCallbacks.onload.bind(this);
@@ -18,8 +21,18 @@ function XhrHandler(xhr) {
 var handlerCallbacks = {
 	onload: function() {
 		this._thenBacks.forEach(function(cb) {
-			cb(this._xhr);
-		});
+			var data;
+
+			if (typeof this._xhr.response != 'string') {
+				data = this._xhr.response;
+			} else if (this._xhr.getResponseHeader('content-type').indexOf('application/json') == 0) {
+				data = JSON.parse(this._xhr.response);
+			} else {
+				data = this._xhr.response;
+			}
+
+			cb(data, this._xhr);
+		}, this);
 	},
 
 	onprogress: function(e) {
@@ -41,7 +54,7 @@ var handlerCallbacks = {
 	}
 };
 
-XhrHandler.prototype = {
+RequestHandler.prototype = {
 	cancel: function() {
 		this._xhr.abort();
 		return this;

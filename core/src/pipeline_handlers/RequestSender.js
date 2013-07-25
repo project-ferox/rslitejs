@@ -1,3 +1,4 @@
+
 function RequestSender() {
 
 }
@@ -8,12 +9,12 @@ RequestSender.prototype = {
 	get: function(ctx, path) {
 		ctx.handler._xhr.send();
 
-		return pipe.handler;
+		return ctx.handler;
 	},
 
 	put: function(ctx, path) {
 		ctx.handler._xhr.send(ctx.data);
 
-		return pipe.handler;
+		return ctx.handler;
 	}
 };
