@@ -13,10 +13,18 @@ RequestSender.prototype = {
 	},
 
 	put: function(ctx, path) {
-		if (typeof ctx.data == 'object')
-			ctx.data = JSON.stringify(ctx.data);
+		// TODO: add additional headers
+		var data = ctx.data;
+		if (typeof data == 'object' && !(data instanceof Blob || 
+			data instanceof ArrayBuffer ||
+			data instanceof File ||
+			data instanceof FormData ||
+			data instanceof Document ||
+			data instanceof ArrayBufferView)) {
+			data = JSON.stringify(data);
+		}
 
-		ctx.handler._xhr.send(ctx.data);
+		ctx.handler._xhr.send(data);
 
 		return ctx.handler;
 	},

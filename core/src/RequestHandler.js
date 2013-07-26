@@ -7,6 +7,8 @@ function EventTarget(xhr, delegate, callbacks) {
 	this._errorBacks = [];
 	this._thenBacks = [];
 
+	this._delegate = delegate;
+
 	delegate.onload = callbacks.onload.bind(this);
 
 	delegate.onabort =
@@ -28,6 +30,11 @@ var standardCallbacks = {
 			data = this._xhr.response;
 		}
 
+		if (this._xhr.status >= 400) {
+			this._delegate.onerror(data);
+			return;
+		}
+
 		this._thenBacks.forEach(function(cb) {
 			cb(data, this._xhr);
 		}, this);
@@ -41,8 +48,8 @@ var standardCallbacks = {
 
 	onerror: function(e) {
 		this._errorBacks.forEach(function(cb) {
-			cb(e);
-		});
+			cb(e, this._xhr);
+		}, this);
 	}
 };
 

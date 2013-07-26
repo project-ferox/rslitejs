@@ -13,6 +13,7 @@ var token = 'testtoken';
 
 
 var error = function(e) {
+	console.log(e);
 	start(); throw e;
 }
 
@@ -104,32 +105,94 @@ asyncTest("We can save a doc with a specific content-type", function() {
 	}, error);
 });
 
-asyncTest("We can save blobs", function() {
-	start();
+asyncTest("Providing a bad token for access controlled operations results in an unauthorized response", function() {
+	var storage = new rslite(endpoint);
+	storage.setToken('baf');
+
+	var handler = storage.put(testUser + "/public/documents/shouldfail", testdoc);
+
+	handler.complete(function(data, hxr) {
+		ok(false);
+		start();
+	}, function(e, xhr) {
+		equal(xhr.status, 401);
+		start();
+	});
 });
 
-asyncTest("We can save files", function() {
-	start();
-});
+asyncTest("Providing no token for access controlled ops result in an unauthorized response", function() {
+	var storage = new rslite(endpoint);
+	var handler = storage.put(testUser + "/public/documents/shouldfail", testdoc);
 
-asyncTest("We can save byte arrays", function() {
-	start();
+	handler.complete(function(data, hxr) {
+		ok(false);
+		start();
+	}, function(e, xhr) {
+		equal(xhr.status, 401);
+		start();
+	});
 });
 
 asyncTest("We can retrieve blobs", function() {
-	start();
+	var handler = storage.get(testUser + "/public/documents/image.png", 'blob');
+
+	handler.complete(function(data, xhr) {
+		var blob = new Blob([data], {type: 'image/png'});
+		var img = document.createElement('img');
+		img.onload = function(e) {
+			window.URL.revokeObjectURL(img.src);
+			equal(img.width, 218);
+			equal(img.height, 128);
+			start();
+		};
+		img.src = window.URL.createObjectURL(blob);
+		document.body.appendChild(img);
+	}, error);
 });
 
-asyncTest("We can retrieve files", function() {
-	start();
+asyncTest("We can save blobs", function() {
+	var storage = new rslite(endpoint);
+	storage.setToken(token);
+
+	var blob = new Blob(["abc123 where is teh text?"], {type: 'text/plain'});
+
+console.log(blob instanceof Blob);
+
+	var handler = storage.put(testUser + "/public/documents/blob", blob);
+
+	handler.complete(function(data, xhr) {
+		ok(true);
+		start();
+
+		// todo retrieve and check the blob that was saved.
+	}, error);
+});
+
+// asyncTest("We can save files", function() {
+// 	start();
+// });
+
+asyncTest("We can save byte arrays", function() {
+	var storage = new rslite(endpoint);
+	storage.setToken(token);
+	var array = new Uint8Array([1, 2, 3]);
+	storage.put(testUser + "/public/documents/array", array.buffer)
+		.complete(function(data, xhr) {
+			ok(true);
+			start();
+		}, error)
+
+		// todo retrieve and check the array
 });
 
 asyncTest("We can retrieve byte arrays", function() {
-	start();
-});
-
-asyncTest("Providing a bad token results in an unauthorized response", function() {
-	start();
+	storage.get(testUser + "/public/documents/array", 'arraybuffer').complete(
+		function(data) {
+			var array = new Uint8Array(data);
+			equal(array[2], 3);
+			equal(array.length, 3);
+			start();
+		}, error);
 });
 
 asyncTest("JSON docs can be patched", function() {
@@ -137,6 +200,14 @@ asyncTest("JSON docs can be patched", function() {
 });
 
 asyncTest("File paths can be watched / subscribed to", function() {
+	start();
+});
+
+asyncTest("Upload progress is reported", function() {
+	start();
+});
+
+asyncTest("Download progress is reported", function() {
 	start();
 });
 

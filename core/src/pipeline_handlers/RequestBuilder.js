@@ -36,7 +36,7 @@ RequestBuilder.prototype = {
 	/**
 	Perform an upsert
 	*/
-	put: function(ctx, path, data) {
+	put: function(ctx, path, data, extraHeaders) {
 		var xhr = createXhr();
 		var handler = new RequestHandler(xhr);
 
