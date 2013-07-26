@@ -1,36 +1,34 @@
-
-// TODO: determine the various status codes and dispatch requests appropriately.
-// TODO: check content-type header and convert content appropriately.
-function RequestHandler(xhr) {
+// TODO: determine the various status codes and dispatch replies appropriately.
+// e.g., to error / abort / whatever.
+function EventTarget(xhr, delegate, callbacks) {
 	this._xhr = xhr;
-
-	xhr.onload = handlerCallbacks.onload.bind(this);
-	xhr.upload.onabort = xhr.onabort =
-		xhr.upload.onerror = xhr.onerror = 
-			xhr.ontimeout = handlerCallbacks.onerror.bind(this);
-
-	xhr.onprogress = handlerCallbacks.onprogress.bind(this);
-	xhr.upload.onprogress = handlerCallbacks.uploadProgress.bind(this);
 
 	this._progressBacks = [];
 	this._errorBacks = [];
 	this._thenBacks = [];
-	this._uploadProgressBacks = [];
+
+	delegate.onload = callbacks.onload.bind(this);
+
+	delegate.onabort =
+	delegate.onerror = 
+	delegate.ontimeout = callbacks.onerror.bind(this);
+
+	delegate.onprogress = callbacks.onprogress.bind(this);
 }
 
-var handlerCallbacks = {
+var standardCallbacks = {
 	onload: function() {
+		var data;
+
+		if (typeof this._xhr.response != 'string') {
+			data = this._xhr.response;
+		} else if (this._xhr.getResponseHeader('content-type').indexOf('application/json') == 0) {
+			data = JSON.parse(this._xhr.response);
+		} else {
+			data = this._xhr.response;
+		}
+
 		this._thenBacks.forEach(function(cb) {
-			var data;
-
-			if (typeof this._xhr.response != 'string') {
-				data = this._xhr.response;
-			} else if (this._xhr.getResponseHeader('content-type').indexOf('application/json') == 0) {
-				data = JSON.parse(this._xhr.response);
-			} else {
-				data = this._xhr.response;
-			}
-
 			cb(data, this._xhr);
 		}, this);
 	},
@@ -41,18 +39,25 @@ var handlerCallbacks = {
 		});
 	},
 
-	uploadProgress: function(e) {
-		this._uploadProgressBacks.forEach(function(cb) {
-			cb(e);
-		});
-	},
-
 	onerror: function(e) {
 		this._errorBacks.forEach(function(cb) {
 			cb(e);
 		});
 	}
 };
+
+var uploadCallbacks = Object.create(standardCallbacks);
+uploadCallbacks.onload = function() {
+	this._thenBacks.forEach(function(cb) {
+		cb(null, this._xhr);
+	}, this);
+};
+
+
+function RequestHandler(xhr) {
+	EventTarget.call(this, xhr, xhr, standardCallbacks);
+	this.upload = new EventTarget(xhr, xhr.upload, uploadCallbacks);
+}
 
 RequestHandler.prototype = {
 	cancel: function() {
@@ -73,10 +78,6 @@ RequestHandler.prototype = {
 
 	progress: function(cb) {
 		this._progressBacks.push(cb);
-	},
-
-	uploadProgress: function(cb) {
-		this._uploadProgressBacks.push(cb);
 	}
 };
 

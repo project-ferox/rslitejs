@@ -10,7 +10,7 @@
 
 		return pipeline;
 	};
-
+	
 	if (typeof define === 'function' && define.amd) {
 		define(rslite);
 	} else if (typeof exports === "object") {

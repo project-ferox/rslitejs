@@ -47,7 +47,7 @@ var nextMethods = {
 	put: function() {
 		var handler = this._nextHandler();
 
-		return handler.get.apply(handler, arguments);
+		return handler.put.apply(handler, arguments);
 	},
 
 	delete: function() {
