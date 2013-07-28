@@ -15,6 +15,7 @@ RequestSender.prototype = {
 	put: function(ctx, path) {
 		// TODO: add additional headers
 		var data = ctx.data;
+		var headers = ctx.headers;
 		if (typeof data == 'object' && !(data instanceof Blob || 
 			data instanceof ArrayBuffer ||
 			data instanceof File ||
@@ -22,6 +23,16 @@ RequestSender.prototype = {
 			data instanceof Document ||
 			data instanceof ArrayBufferView)) {
 			data = JSON.stringify(data);
+
+			if (!headers || !('content-type' in headers))
+				ctx.handler._xhr.setRequestHeader('Content-Type', 'application/json');
+		}
+
+		
+		if (headers) {
+			for (var header in headers) {
+				ctx.handler._xhr.setRequestHeader(header, headers[header]);
+			}
 		}
 
 		ctx.handler._xhr.send(data);

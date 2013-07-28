@@ -44,6 +44,8 @@ RequestBuilder.prototype = {
 		this._addToken(xhr);
 
 		ctx.handler = handler;
+		if (ctx.headers == null)
+			ctx.headers = extraHeaders; // otherwise merge them...
 		ctx.data = data;
 
 		return ctx.next();
