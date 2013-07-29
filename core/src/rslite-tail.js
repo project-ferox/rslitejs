@@ -1,6 +1,6 @@
 
 	var rslite = function(endpoint) {
-		var pipeline = new Pipeline();
+		var pipeline = createPipeline(['setToken', 'get', 'put', 'delete']);
 
 		pipeline.addHandler(new RequestBuilder(endpoint));
 		pipeline.addHandler(new RequestSender());
