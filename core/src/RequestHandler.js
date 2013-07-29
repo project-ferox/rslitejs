@@ -18,13 +18,32 @@ function EventTarget(xhr, delegate, callbacks) {
 	delegate.onprogress = callbacks.onprogress.bind(this);
 }
 
+EventTarget.prototype = {
+	complete: function(cb, ecb) {
+		if (cb != null)
+			this._thenBacks.push(cb);
+		if (ecb != null)
+			this._errorBacks.push(ecb);
+	},
+
+	error: function(cb) {
+		this._errorBacks.push(cb);
+	},
+
+	progress: function(cb) {
+		this._progressBacks.push(cb);
+	}
+}
+
 var standardCallbacks = {
 	onload: function() {
 		var data;
 
 		if (typeof this._xhr.response != 'string') {
 			data = this._xhr.response;
-		} else if (this._xhr.getResponseHeader('content-type').indexOf('application/json') == 0) {
+		} else if (this._xhr.getResponseHeader('content-type')
+				.indexOf('application/json') == 0) {
+			console.log(this._xhr.response);
 			data = JSON.parse(this._xhr.response);
 		} else {
 			data = this._xhr.response;
@@ -66,27 +85,11 @@ function RequestHandler(xhr) {
 	this.upload = new EventTarget(xhr, xhr.upload, uploadCallbacks);
 }
 
-RequestHandler.prototype = {
-	cancel: function() {
+RequestHandler.prototype = Object.create(EventTarget.prototype);
+RequestHandler.prototype.cancel = function() {
 		this._xhr.abort();
 		return this;
-	},
-
-	complete: function(cb, ecb) {
-		if (cb != null)
-			this._thenBacks.push(cb);
-		if (ecb != null)
-			this._errorBacks.push(ecb);
-	},
-
-	error: function(cb) {
-		this._errorBacks.push(cb);
-	},
-
-	progress: function(cb) {
-		this._progressBacks.push(cb);
-	}
-};
+	};
 
 function createXhr() {
 	return window.ActiveXObject ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest();

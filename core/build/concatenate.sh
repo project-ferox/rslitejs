@@ -1,3 +1,5 @@
+mkdir -p ../dist
+
 cat ../src/rslite-head.js \
 ../src/RequestHandler.js \
 ../src/Pipeline.js \
