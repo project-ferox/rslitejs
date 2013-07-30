@@ -2,8 +2,8 @@
 	var rslite = function(endpoint) {
 		var pipeline = createPipeline(['setToken', 'get', 'put', 'delete']);
 
-		pipeline.addHandler(new RequestBuilder(endpoint));
-		pipeline.addHandler(new RequestSender());
+		pipeline.addLast('requestBuilder', new RequestBuilder(endpoint));
+		pipeline.addLast('requestSender', new RequestSender());
 
 		/*
 		*/
@@ -18,4 +18,4 @@
 	} else {
 		root.rslite = rslite;
 	}
-})(this);
+}).call(this, this);
