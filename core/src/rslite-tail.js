@@ -1,18 +1,11 @@
-
-	var rslite = function(endpoint) {
-		var pipeline = createPipeline(['setToken', 'get', 'put', 'delete']);
-
-		pipeline.addLast('requestBuilder', new RequestBuilder(endpoint));
-		pipeline.addLast('requestSender', new RequestSender());
-
-		/*
-		*/
-
-		return pipeline;
+	rslite.handlers = {
+		Aborter: Aborter,
+		RequestBuilder: RequestBuilder,
+		RequestSender: RequestSender
 	};
-	
+
 	if (typeof define === 'function' && define.amd) {
-		define(rslite);
+		define('rslite', rslite);
 	} else if (typeof exports === "object") {
 		module.exports = rslite;
 	} else {

@@ -14,7 +14,7 @@ RequestBuilder.prototype = {
 	setToken: function(ctx, token) {
 		this._token = token;
 
-		return ctx.next();
+		return ctx.next(token);
 	},
 
 	/**
@@ -30,7 +30,7 @@ RequestBuilder.prototype = {
 
 		ctx.handler = handler;
 
-		return ctx.next();
+		return ctx.next(path, responseType);
 	},
 
 	/**
@@ -48,7 +48,7 @@ RequestBuilder.prototype = {
 			ctx.headers = extraHeaders; // otherwise merge them...
 		ctx.data = data;
 
-		return ctx.next();
+		return ctx.next(path, data, extraHeaders);
 	},
 
 	/**
@@ -63,7 +63,7 @@ RequestBuilder.prototype = {
 
 		ctx.handler = handler;
 
-		return ctx.next();
+		return ctx.next(path);
 	},
 
 	_addToken: function(xhr) {

@@ -108,6 +108,23 @@ var abstractPipeline = {
 
 		if (i >= 0)
 			handlers.splice(i, 1);
+	},
+
+	getFirst: function() {
+		return this._handlers[0];
+	},
+
+	getLast: function() {
+		return this._handlers[this._handlers.length - 1];
+	},
+
+	get: function(target) {
+		var handlers = this._handlers;
+		var len = handlers.length;
+		var i = indexOfHandler(handlers, len, target);
+
+		if (i >= 0)
+			return handlers[i];
 	}
 };
 
@@ -141,7 +158,7 @@ function createPipeline(pipedMethodNames) {
 }
 
 if (typeof define === 'function' && define.amd) {
-	define(createPipeline);
+	define('pipelinejs', createPipeline);
 } else if (typeof exports === "object") {
 	module.exports = createPipeline;
 } else {
