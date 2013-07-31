@@ -20,23 +20,24 @@ RequestBuilder.prototype = {
 	/**
 	Issues a get request for the specified path.
 	*/
-	get: function(ctx, path, responseType) {
+	get: function(ctx, path, options) {
 		var xhr = createXhr();
 		var handler = new RequestHandler(xhr);
 
 		xhr.open('GET', this._endpoint + '/' + path);
-		xhr.responseType = responseType;
+		if (options && options.responseType)
+			xhr.responseType = options.responseType;
+		
 		this._addToken(xhr);
-
 		ctx.handler = handler;
 
-		return ctx.next(path, responseType);
+		return ctx.next(path, options);
 	},
 
 	/**
 	Perform an upsert
 	*/
-	put: function(ctx, path, data, extraHeaders) {
+	put: function(ctx, path, data, options) {
 		var xhr = createXhr();
 		var handler = new RequestHandler(xhr);
 
@@ -44,11 +45,7 @@ RequestBuilder.prototype = {
 		this._addToken(xhr);
 
 		ctx.handler = handler;
-		if (ctx.headers == null)
-			ctx.headers = extraHeaders; // otherwise merge them...
-		ctx.data = data;
-
-		return ctx.next(path, data, extraHeaders);
+		return ctx.next(path, data, options);
 	},
 
 	/**

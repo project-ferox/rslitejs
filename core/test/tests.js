@@ -92,7 +92,7 @@ asyncTest("We can save a doc with a specific content-type", function() {
 	storage.setToken(token);
 
 	var handler = storage.put(testUser + "/public/documents/ctype.txt", testdoc, {
-		"content-type": "text/plain"
+		headers: {"content-type": "text/plain"}
 	});
 
 	handler.complete(function(data, xhr) {
@@ -134,7 +134,7 @@ asyncTest("Providing no token for access controlled ops result in an unauthorize
 });
 
 asyncTest("We can retrieve blobs", function() {
-	var handler = storage.get(testUser + "/public/documents/image.png", 'blob');
+	var handler = storage.get(testUser + "/public/documents/image.png", {responseType: 'blob'});
 
 	handler.complete(function(data, xhr) {
 		var blob = new Blob([data], {type: 'image/png'});
@@ -186,7 +186,7 @@ asyncTest("We can save byte arrays", function() {
 });
 
 asyncTest("We can retrieve byte arrays", function() {
-	storage.get(testUser + "/public/documents/array", 'arraybuffer').complete(
+	storage.get(testUser + "/public/documents/array", {responseType: 'arraybuffer'}).complete(
 		function(data) {
 			var array = new Uint8Array(data);
 			equal(array[2], 3);

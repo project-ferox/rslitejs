@@ -12,10 +12,10 @@ RequestSender.prototype = {
 		return ctx.handler;
 	},
 
-	put: function(ctx, path) {
+	put: function(ctx, path, data, options) {
 		// TODO: add additional headers
-		var data = ctx.data;
-		var headers = ctx.headers;
+		if (options)
+			var headers = options.headers;
 		if (typeof data == 'object' && !(data instanceof Blob || 
 			data instanceof ArrayBuffer ||
 			data instanceof File ||

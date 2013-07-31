@@ -1,7 +1,7 @@
 (function(root) {
 
 function Future() {
-	
+
 }
 
 function errOpen() {
@@ -28,7 +28,7 @@ function CacheHandler() {
 
 CacheHandler.prototype = {
 	setToken: function(ctx, token) { return ctx.next(token); },
-	get: function(ctx, path, responseType, forceUpdate) {
+	get: function(ctx, path, options) {
 		if (this._cache._openPending) {
 			var self = this;
 			var future = new Future();
@@ -57,8 +57,12 @@ CacheHandler.prototype = {
 		//return ctx.next(path, responseType);
 	},
 
-	put: function(ctx, path, data, extraHeaders, cacheOnly) {
+	put: function(ctx, path, data, options) {
 		return ctx.next(path, data, extraHeaders)
+	},
+
+	delete: function(ctx, path, options) {
+
 	}
 };
 
@@ -72,8 +76,6 @@ function goOffline() {
 
 root.rslite.cache = {
 	install: function(pipeline, options) {
-		pipeline.goOffline = goOffline;
-		pipeline.goOnline = goOnline;
 		pipeline._aborter = new Aborter();
 
 		pipeline.goOnline = goOnline.bind(pipeline);
