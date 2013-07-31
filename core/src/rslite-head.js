@@ -10,6 +10,7 @@ var ArrayBufferView = root.ArrayBufferView || empty;
 var rslite = function(endpoint) {
 	var pipeline = createPipeline(['setToken', 'get', 'put', 'delete']);
 
+	pipeline.endpoint = endpoint;
 	pipeline.addLast('requestBuilder', new RequestBuilder(endpoint));
 	pipeline.addLast('requestSender', new RequestSender());
 

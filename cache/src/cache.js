@@ -1,88 +1,82 @@
 (function(root) {
 
-function Future() {
-
-}
-
 function errOpen() {
 	this._openPending = undefined;
+	this._openListener();
 }
 
-function succOpen() {
+function succOpen(event) {
 	this._openPending = false;
+	this._db = event.target.result;
+	this._openListener();
 }
 
-function Cache() {
-	var openReq = indexedDB.open("rslite-cache");
+function IndexedDbCache(openListener) {
+	var openReq = indexedDB.open("rslite-cache", 1);
 	openReq.onerror = errOpen.bind(this);
 	openReq.onsuccess = succOpen.bind(this);
 
 	this._openPending = true;
+	this._openListener = openListener;
 }
 
-function CacheHandler() {
-	// use indexedDB as the cache.
-	this._cache = new Cache();
-	this._queue = [];
-}
-
-CacheHandler.prototype = {
-	setToken: function(ctx, token) { return ctx.next(token); },
-	get: function(ctx, path, options) {
-		if (this._cache._openPending) {
-			var self = this;
-			var future = new Future();
-
-			this._queue.push({ 
-				future: future,
-				func: function() {
-					return self.get(ctx, path, responseType, forceUpdate);
-				}
-			});
-
-			return future;
+IndexedDbCache.prototype = {
+	get: function(path, cb, options) {
+		if (!this._db) {
+			cb(null, "Couldn't open DB");
+			return;
 		}
 
-		var future = new Future();
-		var self = this;
-		this._cache.get(path, function(resource, err) {
-			if (resource == self._cache.miss) {
-				future.resolveLater(ctx.next(path, responseType));
-			} else {
-				future.resolve(resource);
-			}
-		});
 
-		return future;
-		//return ctx.next(path, responseType);
 	},
 
-	put: function(ctx, path, data, options) {
-		return ctx.next(path, data, extraHeaders)
+	// TODO: ought we accept callbacks and do some more robust handling?
+	put: function(path, data, options) {
+		if (!this._db)
+			return;
 	},
 
-	delete: function(ctx, path, options) {
-
+	delete: function(path, options) {
+		if (!this._db)
+			return;
 	}
 };
 
-function goOnline() {
-	this.remove('aborter');
+var MISS = IndexedDbCache.MISS = {};
+
+function LocalStorageCache(openListener) {
+	this._openPending = false;
+	openListener();
+	this._db = localStorage;
 }
 
-function goOffline() {
-	this.addAfter('cache', 'aborter', this._aborter);
-}
+LocalStorageCache.prototype = {
+	get: function(path, cb, options) {
+		var item = this._db.getItem(path);
+		if (item == null) {
+			cb(MISS);
+		} else {
+			cb(item);
+		}
+	},
 
-root.rslite.cache = {
-	install: function(pipeline, options) {
-		pipeline._aborter = new Aborter();
+	put: function(path, data, options) {
+		this._db.setItem(path, data);
+	},
 
-		pipeline.goOnline = goOnline.bind(pipeline);
-		pipeline.goOffline = goOffline.bind(pipeline);
-
-		pipeline.addBefore("requestBuilder", new CacheHandler());
+	delete: function(path, options) {
+		this._db.removeItem(path);
 	}
 };
+
+LocalStorageCache.MISS = MISS;
+
+if (!root.rslite.priv)
+	root.rslite.priv = {};
+
+if (false)
+	root.rslite.priv.Cache = IndexedDbCache;
+else
+	root.rslite.priv.Cache = LocalStorageCache;
 
 }).call(this, this);

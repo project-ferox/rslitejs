@@ -2,10 +2,11 @@
 @author Matt Crinklaw-Vogt
 */
 (function(root) {
-function PipeContext(handlers, nextMehod, end) {
+function PipeContext(handlers, nextMehod, pipeline, end) {
 	this._handlers = handlers;
 	this._next = nextMehod;
 	this._end = end;
+	this.pipeline = pipeline;
 
 	this._i = 0;
 }
@@ -118,7 +119,7 @@ var abstractPipeline = {
 		return this._handlers[this._handlers.length - 1];
 	},
 
-	get: function(target) {
+	getHandler: function(target) {
 		var handlers = this._handlers;
 		var len = handlers.length;
 		var i = indexOfHandler(handlers, len, target);
@@ -150,7 +151,7 @@ function createPipeline(pipedMethodNames) {
 			"return handler." + name + ".apply(handler, arguments);");
 
 		pipelineProto[name] = new Function(
-			"var ctx = new this._contextCtor(this._handlers, this._nextMethods." + name + ", this.end);"
+			"var ctx = new this._contextCtor(this._handlers, this._nextMethods." + name + ", this, this.end);"
 			+ "return ctx.next.apply(ctx, arguments);");
 	});
 
