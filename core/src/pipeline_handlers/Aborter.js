@@ -8,15 +8,15 @@ Aborter.prototype = {
 	},
 
 	get: function() {
-		var future = new Future();
+		var future = new root.rslite.Future();
 		future._fail({type: 'offline'}, null);
 
 		return future;
 	},
 
 	put: function() {
-		var future = new Future();
-		future.upload = new Future();
+		var future = new root.rslite.Future();
+		future.upload = new root.rslite.Future();
 
 		future._fail({type: 'offline'}, null);
 		future.upload._fail({type: 'offline'}, null);
@@ -25,7 +25,7 @@ Aborter.prototype = {
 	},
 
 	delete: function() {
-		var future = new Future();
+		var future = new root.rslite.Future();
 		future._fail({type: 'offline'}, null);
 
 		return future;

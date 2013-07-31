@@ -1,4 +1,5 @@
 (function(root) {
+var Future = root.rslite.Future;
 
 function CacheHandler() {
 	// use indexedDB as the cache.
@@ -10,10 +11,9 @@ function CacheHandler() {
 CacheHandler.prototype = {
 	setToken: function(ctx, token) { return ctx.next(token); },
 	get: function(ctx, path, options) {
+		var self = this;
 		if (this._cache._openPending) {
-			var self = this;
 			var future = new Future();
-
 			this._queue.push(function() {
 				future._resolveLater(self.get(ctx, path, options));
 			});
@@ -22,44 +22,96 @@ CacheHandler.prototype = {
 		}
 
 		var future = new Future();
-		var self = this;
 		var fullPath = ctx.pipeline.endpoint + '/' + path;
-		this._cache.get(fullPath, function(resource, err) {
-			if (resource == Cache.MISS || err != null) {
-				console.log("Couldn't use the cache. " + err);
-				future._resolveLater(ctx.next(path, options));
-			} else if (err == null) {
-				future._resolve(resource);
-			}
-		}, options);
+
+		if (options && options.forceCacheUpdate) {
+			future.complete(function(resource) {
+				self._cache.put(fullPath, resource);
+			});
+
+			future._resolveLater(ctx.next(path, options));
+		} else {
+			this._cache.get(fullPath, function(resource, err) {
+				if (resource == Cache.MISS || err != null) {
+					if (!options || !options.bypassCache) {
+						future.complete(function(resource) {
+							self._cache.put(fullPath, resource);
+						});
+					}
+					future._resolveLater(ctx.next(path, options));
+				} else if (err == null) {
+					future._resolve(resource);
+				}
+			}, options);
+		}
 
 		return future;
-		//return ctx.next(path, responseType);
 	},
 
 	put: function(ctx, path, data, options) {
 		if (!options || !options.bypassCache) {
 			if (this._cache._openPending) {
 				var self = this;
+				var future = new Future();
 				this._queue.push(function() {
-					self._cache.put(path, data, options);
+					future._resolveLater(self._cache.put(path, data, options));
 				});
-			} else {
-				var fullPath = ctx.pipeline.endpoint + '/' + path;
-				this._cache.put(fullPath, data, options);
+
+				return future;
 			}
+
+			var future = new Future(2);
+			var fullPath = ctx.pipeline.endpoint + '/' + path;
+			this._cache.put(fullPath, data, function(err) {
+				if (!err)
+					future._resolve();
+				else
+					future._fail(err);
+			}, options);
 		}
 
-		return ctx.next(path, data, options)
+		var handler = ctx.next(path, data, options);
+
+		if (future) {
+			future._resolveLater(handler);
+			return future;
+		}
+
+		return handler;
 	},
 
 	delete: function(ctx, path, options) {
 		if (!options || !options.retainCached) {
+			var future = new Future(2);
 			var fullPath = ctx.pipeline.endpoint + '/' + path;
-			this._cache.delete(fullPath, options);
+			this._cache.delete(fullPath, function(err) {
+				if (!err)
+					future._resolve();
+				else
+					future._fail(err);
+			}, options);
 		}
 
-		return ctx.next(path, options);
+		var handler = ctx.next(path, options);
+
+		if (future) {
+			future._resolveLater(handler);
+			return future;
+		}
+
+		return handler;
+	},
+
+	refresh: function(paths) {
+
+	},
+
+	purge: function(paths) {
+		this._cache.purge(paths);
+	},
+
+	push: function(paths) {
+
 	},
 
 	_processQueue: function() {

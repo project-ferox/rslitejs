@@ -16,3 +16,5 @@ var rslite = function(endpoint) {
 
 	return pipeline;
 };
+
+root.rslite = rslite;

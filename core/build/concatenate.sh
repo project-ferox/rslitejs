@@ -1,8 +1,10 @@
 mkdir -p ../dist
 
 cat ../src/rslite-head.js \
-../src/RequestHandler.js \
+../src/Future.js \
+../src/Semaphore.js \
 ../src/Pipeline.js \
+../src/RequestHandler.js \
 ../src/pipeline_handlers/RequestBuilder.js \
 ../src/pipeline_handlers/RequestSender.js \
 ../src/pipeline_handlers/Aborter.js \

@@ -15,8 +15,13 @@ var error = function(e) {
 	start(); throw e;
 }
 
-var storage = new rslite(endpoint);
+var semaphore = rslite.semaphore;
+var storage = new rslite(endpoint + "/" + testUser);
 rslite.cache.install(storage);
+
+function createCachePath(path) {
+	return endpoint + "/" + testUser + "/" + path;
+}
 
 test("Cache installed", function() {
 	ok(storage.getHandler('cache') != null, 'Cache is in the pipe');
@@ -30,12 +35,34 @@ test("Cache allows rslite to go online", function() {
 	ok(typeof storage.goOnline == 'function', 'Added goOnline to pipe');
 });
 
-test("Cache stores all transactions while offline", function() {
+asyncTest("Cache stores all transactions while offline", function() {
+	var storage = new rslite(endpoint + "/" + testUser);
+	rslite.cache.install(storage);
+	storage.goOffline();
 
+	var handler1 = storage.put('documents/testdoc.json', testdoc);
+	var handler2 = storage.put('documents/other.json', {a:'b'});
+
+	var sem = semaphore(2, start);
+	handler1.complete(function() {
+		storage.getHandler('cache').get(createCachePath('documents/testdoc.json'),
+		function(item) {
+			deepEqual(item, testdoc);
+			sem();
+		});
+	}, error);
+
+	handler2.complete(function() {
+		storage.getHandler('cache').get(createCachePath('documents/other.json'),
+		function(item) {
+			deepEqual(item, {a:'b'});
+			sem();
+		});
+	}, error);
 });
 
-test("Cache stores all transactions while online", function() {
-
+asyncTest("Cache stores all transactions while online", function() {
+	start();
 });
 
 test("Cache can be forced to update", function() {

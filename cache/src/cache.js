@@ -44,6 +44,7 @@ IndexedDbCache.prototype = {
 
 var MISS = IndexedDbCache.MISS = {};
 
+var localStoragePrefix = 'rslCache';
 function LocalStorageCache(openListener) {
 	this._openPending = false;
 	openListener();
@@ -52,7 +53,7 @@ function LocalStorageCache(openListener) {
 
 LocalStorageCache.prototype = {
 	get: function(path, cb, options) {
-		var item = this._db.getItem(path);
+		var item = this._db.getItem(localStoragePrefix + path);
 		if (item == null) {
 			cb(MISS);
 		} else {
@@ -60,12 +61,31 @@ LocalStorageCache.prototype = {
 		}
 	},
 
-	put: function(path, data, options) {
-		this._db.setItem(path, data);
+	// TODO: should be able to notify listeners on a given path.
+	put: function(path, data, cb, options) {
+		this._db.setItem(localStoragePrefix + path, data);
+		cb();
 	},
 
-	delete: function(path, options) {
-		this._db.removeItem(path);
+	delete: function(path, cb, options) {
+		this._db.removeItem(localStoragePrefix + path);
+		cb();
+	},
+
+	purge: function(paths) {
+		var localStorage = this._db;
+		if (!paths) {
+			for (var i = 0; i < localStorage.length; ++i) {
+				var key = localStorage.key(i);
+				if (key.indexOf(localStoragePrefix) == 0) {
+					localStorage.removeItem(key);
+				}
+			}
+		} else {
+			paths.forEach(function(path) {
+				localStorage.removeItem(localStoragePrefix + path);
+			});
+		}
 	}
 };
 
