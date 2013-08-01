@@ -17,12 +17,20 @@ Future.prototype = {
 		return this._resolutions == 0;
 	},
 
-	complete: function(cb) {
-		if (this._completed())
-			if (!this._error)
-				cb.apply(null, this._finalArguments)
-		else
-			this._thenBacks.push(cb);
+	complete: function(cb, ecb) {
+		if (this._completed()) {
+			if (!this._error) {
+				if (cb)
+					cb.apply(null, this._finalArguments);
+			} else if (ecb) {
+				ecb.apply(null, this._finalArguments);
+			}
+		} else {
+			if (cb)
+				this._thenBacks.push(cb);
+			if (ecb)
+				this._errorBacks.push(cb);
+		}
 	},
 
 	error: function(cb) {
@@ -47,7 +55,6 @@ Future.prototype = {
 	_resolve: function() {
 		if (this._completed())
 			throw "Future already completed";
-
 		var finalArguments = this._finalArguments = arguments;
 		this._resolutions -= 1;
 

@@ -40,14 +40,14 @@ asyncTest("Cache stores all transactions while offline", function() {
 	rslite.cache.install(storage);
 	storage.goOffline();
 
-	var handler1 = storage.put('documents/testdoc.json', testdoc);
+	var handler1 = storage.put('documents/athing.json', {a:{document:'here'}});
 	var handler2 = storage.put('documents/other.json', {a:'b'});
 
 	var sem = semaphore(2, start);
 	handler1.complete(function() {
-		storage.getHandler('cache')._cache.get(createCachePath('documents/testdoc.json'),
+		storage.getHandler('cache')._cache.get(createCachePath('documents/athing.json'),
 		function(item) {
-			deepEqual(item, testdoc);
+			deepEqual(item, {a:{document:'here'}});
 			sem();
 		});
 	}, error);
@@ -62,7 +62,25 @@ asyncTest("Cache stores all transactions while offline", function() {
 });
 
 asyncTest("Cache stores all transactions while online", function() {
-	start();
+	var sem = semaphore(2, start);
+
+	var handler = storage.get('documents/testdoc.json');
+	handler.complete(function(resource) {
+		storage.getHandler('cache')._cache.get(createCachePath('documents/testdoc.json'),
+		function(item) {
+			deepEqual(item, testdoc);
+			sem();
+		});
+	}, error);
+
+	handler = storage.put('documents/other.json', "abc");
+	handler.complete(function() {
+		storage.getHandler('cache')._cache.get(createCachePath('documents/other.json'),
+		function(item) {
+			equal(item, "abc");
+			sem();
+		});
+	}, error);
 });
 
 test("Cache can be forced to update", function() {

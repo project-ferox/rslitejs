@@ -1,12 +1,13 @@
 (function(root) {
 var Future = root.rslite.Future;
 var Aborter = root.rslite.handlers.Aborter;
+var Cache = root.rslite.priv.Cache;
 
 function CacheHandler() {
 	// use indexedDB as the cache.
 	// TODO: more sensible to have the cache handle the queueing?
 	this._queue = [];
-	this._cache = new root.rslite.priv.Cache(this._processQueue.bind(this));
+	this._cache = new Cache(this._processQueue.bind(this));
 }
 
 CacheHandler.prototype = {
