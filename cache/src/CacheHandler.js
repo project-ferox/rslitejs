@@ -52,6 +52,7 @@ CacheHandler.prototype = {
 	},
 
 	put: function(ctx, path, data, options) {
+		if (options) var cacheOnly = options.cacheOnly;
 		if (!options || !options.bypassCache) {
 			if (this._cache._openPending) {
 				var self = this;
@@ -63,7 +64,8 @@ CacheHandler.prototype = {
 				return future;
 			}
 
-			var future = new Future(2);
+			var count = cacheOnly ? 1 : 2;
+			var future = new Future(count);
 			var fullPath = ctx.pipeline.endpoint + '/' + path;
 			this._cache.put(fullPath, data, function(err) {
 				if (!err)
@@ -73,10 +75,12 @@ CacheHandler.prototype = {
 			}, options);
 		}
 
-		var handler = ctx.next(path, data, options);
+		if (!cacheOnly)
+			var handler = ctx.next(path, data, options);
 
 		if (future) {
-			future._resolveLater(handler);
+			if (handler)
+				future._resolveLater(handler);
 			return future;
 		}
 
@@ -105,14 +109,31 @@ CacheHandler.prototype = {
 		return handler;
 	},
 
-	refresh: function(paths) {
-		if (!paths)
-			paths = this.getCachedPaths();
-
+	_refresh: function(future, paths) {
 		var options = {forceCacheUpdate: true};
+		var future2 = new Future(paths.length);
 		paths.forEach(function(path) {
-			this._pipeline.get(path, options);
+			var f = this._pipeline.get(path.substring(this._pipeline.endpoint.length+1), options);
+			future2._resolveLater(f);
 		}, this);
+
+		if (future)
+			future._resolveLater(future2);
+
+		return future2;
+	},
+
+	refresh: function(paths) {
+		if (!paths) {
+			var self = this;
+			var future = new Future();
+			this.getCachedPaths(function(paths) {
+				self._refresh(future, paths);
+			});
+			return future;
+		} else {
+			return this._refresh(null, paths);
+		}
 	},
 
 	purge: function(paths, cb) {
@@ -157,12 +178,17 @@ function goOffline() {
 	this.addAfter('cache', 'aborter', this._aborter);
 }
 
+function isOnline() {
+	return this.getHandler('aborter') == null;
+}
+
 root.rslite.cache = {
 	install: function(pipeline, options) {
 		pipeline._aborter = new Aborter();
 
 		pipeline.goOnline = goOnline.bind(pipeline);
 		pipeline.goOffline = goOffline.bind(pipeline);
+		pipeline.isOnline = isOnline.bind(pipeline);
 
 		pipeline.addBefore("requestBuilder", "cache", new CacheHandler());
 	}

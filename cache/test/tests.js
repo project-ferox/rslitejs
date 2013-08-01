@@ -68,7 +68,7 @@ asyncTest("Cache stores all transactions while offline", function() {
 asyncTest("Cache stores all transactions while online", function() {
 	var sem = semaphore(2, start);
 
-	var handler = storage.get('public/documents/testdoc.json');
+	var handler = storage.put('public/documents/testdoc.json', testdoc);
 	handler.complete(function(resource) {
 		storage.getHandler('cache')._cache.get(createCachePath('public/documents/testdoc.json'),
 		function(err, item) {
@@ -87,9 +87,19 @@ asyncTest("Cache stores all transactions while online", function() {
 	}, error);
 });
 
-// test("Cache can be forced to update", function() {
+asyncTest("Cache can be forced to update", function() {
+	storage.goOffline();
 
-// });
+	var future = storage.put('public/documents/testdoc.json', "bad");
+	future.complete(function() {
+		storage.goOnline();
+		var future = storage.get('public/documents/testdoc.json', {forceCacheUpdate: true});
+		future.complete(function(resource) {
+			deepEqual(resource, testdoc);
+			start();
+		}, error);
+	}, error);
+});
 
 asyncTest("Keys for items in the cache can be retrieved", function() {
 	storage.getHandler('cache').getCachedPaths(function(paths) {
@@ -111,24 +121,52 @@ asyncTest("Cache can be purged", function() {
 	});
 });
 
-test("Entire cache can be refreshed", function() {
+asyncTest("Entire cache can be refreshed", function() {
+	storage.goOffline();
 
+	var future = storage.put('public/documents/testdoc.json', "bad");
+	future.complete(function() {
+		storage.goOnline();
+		var future = storage.getHandler('cache').refresh();
+		future.complete(function() {
+			storage.get('public/documents/testdoc.json').complete(function(resource) {
+				deepEqual(resource, testdoc);
+				start();
+			}, error);
+		}, error);
+	});
 });
 
-test("Number of items held can be configured", function() {
+// test("Number of items held can be configured", function() {
 
+// });
+
+// test("Eviction algorithm may be provided", function() {
+
+// });
+
+asyncTest("Can put stuff to the cache only (ignoring backend)", function() {
+	if (!storage.isOnline()) throw "Storage is offline for some reason";
+
+	var future = storage.put('public/documents/offline', 'offline', {cacheOnly: true});
+	future.complete(function() {
+		storage.getHandler('cache').purge(null, function() {
+			storage.get('public/documents/offline').complete(function() {
+				ok(false);
+				start();
+			}, function() {
+				// error is ok since the doc shouldn't exist.
+				ok(true);
+				start();
+			});
+		});
+	}, error);
 });
 
-test("Eviction algorithm may be provided", function() {
+// test("Specific items may be removed from the cache", function() {
 
-});
+// });
 
-test("Can put stuff to the cache only", function() {
-
-});
-
-test("Specific items may be removed from the cache", function() {
-
-});
+// TODO: what type of errors should we expect when the doc doesn't exist?
 
 })();
