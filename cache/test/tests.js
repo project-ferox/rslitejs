@@ -40,21 +40,21 @@ asyncTest("Cache stores all transactions while offline", function() {
 	rslite.cache.install(storage);
 	storage.goOffline();
 
-	var handler1 = storage.put('documents/athing.json', {a:{document:'here'}});
+	var handler1 = storage.put('documents/athing.json', {a:{doc:'here'}});
 	var handler2 = storage.put('documents/other.json', {a:'b'});
 
 	var sem = semaphore(2, start);
 	handler1.complete(function() {
 		storage.getHandler('cache')._cache.get(createCachePath('documents/athing.json'),
-		function(item) {
-			deepEqual(item, {a:{document:'here'}});
+		function(err, item) {
+			deepEqual(item, {a:{doc:'here'}});
 			sem();
 		});
 	}, error);
 
 	handler2.complete(function() {
 		storage.getHandler('cache')._cache.get(createCachePath('documents/other.json'),
-		function(item) {
+		function(err, item) {
 			deepEqual(item, {a:'b'});
 			sem();
 		});
@@ -67,7 +67,7 @@ asyncTest("Cache stores all transactions while online", function() {
 	var handler = storage.get('documents/testdoc.json');
 	handler.complete(function(resource) {
 		storage.getHandler('cache')._cache.get(createCachePath('documents/testdoc.json'),
-		function(item) {
+		function(err, item) {
 			deepEqual(item, testdoc);
 			sem();
 		});
@@ -76,23 +76,34 @@ asyncTest("Cache stores all transactions while online", function() {
 	handler = storage.put('documents/other.json', "abc");
 	handler.complete(function() {
 		storage.getHandler('cache')._cache.get(createCachePath('documents/other.json'),
-		function(item) {
+		function(err, item) {
 			equal(item, "abc");
 			sem();
 		});
 	}, error);
 });
 
-test("Cache can be forced to update", function() {
+// test("Cache can be forced to update", function() {
 
+// });
+
+asyncTest("Keys for items in the cache can be retrieved", function() {
+	storage.getHandler('cache').getCachedPaths(function(paths) {
+		console.log(paths);
+		ok(paths.indexOf(createCachePath('documents/other.json')) >= 0)
+		ok(paths.indexOf(createCachePath('documents/testdoc.json')) >= 0)
+		ok(paths.indexOf(createCachePath('documents/athing.json')) >= 0)
+		start();
+	});
 });
 
-test("Keys for items in the cache can be retrieved", function() {
-
-});
-
-test("Cache can be purged", function() {
-
+asyncTest("Cache can be purged", function() {
+	storage.getHandler('cache').purge(null, function() {
+		storage.getHandler('cache').getCachedPaths(function(paths) {
+			equal(paths.length, 0);
+			start();
+		});
+	});
 });
 
 test("Entire cache can be refreshed", function() {

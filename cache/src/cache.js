@@ -57,9 +57,9 @@ LocalStorageCache.prototype = {
 	get: function(path, cb, options) {
 		var item = this._db.getItem(localStoragePrefix + path);
 		if (item == null) {
-			cb(MISS);
+			cb(null, MISS, path);
 		} else {
-			cb(JSON.parse(item));
+			cb(null, JSON.parse(item), path);
 		}
 	},
 
@@ -78,7 +78,7 @@ LocalStorageCache.prototype = {
 		cb();
 	},
 
-	purge: function(paths) {
+	purge: function(paths, cb) {
 		var localStorage = this._db;
 		if (!paths) {
 			for (var i = 0; i < localStorage.length; ++i) {
@@ -92,6 +92,19 @@ LocalStorageCache.prototype = {
 				localStorage.removeItem(localStoragePrefix + path);
 			});
 		}
+
+		cb();
+	},
+
+	getCachedPaths: function(cb) {
+		var result = [];
+		for (var i = 0; i < localStorage.length; ++i) {
+			var key = localStorage.key(i);
+			if (key.indexOf(localStoragePrefix) == 0)
+				result.push(key.substring(localStoragePrefix.length));
+		}
+
+		cb(result);
 	}
 };
 

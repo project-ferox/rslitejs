@@ -29,7 +29,7 @@ Future.prototype = {
 			if (cb)
 				this._thenBacks.push(cb);
 			if (ecb)
-				this._errorBacks.push(cb);
+				this._errorBacks.push(ecb);
 		}
 	},
 

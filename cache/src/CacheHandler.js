@@ -12,6 +12,7 @@ function CacheHandler() {
 
 CacheHandler.prototype = {
 	setToken: function(ctx, token) { return ctx.next(token); },
+	setPipeline: function(pipeline) { this._pipeline = pipeline; },
 	get: function(ctx, path, options) {
 		var self = this;
 		if (this._cache._openPending) {
@@ -34,8 +35,9 @@ CacheHandler.prototype = {
 			future.complete(getCompleteCb);
 			future._resolveLater(ctx.next(path, options));
 		} else {
-			this._cache.get(fullPath, function(resource, err) {
-				if (resource == Cache.MISS || err != null) {
+			var checkCacheOnly = options && options.checkCacheOnly;
+			this._cache.get(fullPath, function(err, resource) {
+				if ((resource == Cache.MISS || err != null) && !checkCacheOnly) {
 					if (!options || !options.bypassCache) {
 						future.complete(getCompleteCb);
 					}
@@ -104,15 +106,38 @@ CacheHandler.prototype = {
 	},
 
 	refresh: function(paths) {
+		if (!paths)
+			paths = this.getCachedPaths();
 
+		var options = {forceCacheUpdate: true};
+		paths.forEach(function(path) {
+			this._pipeline.get(path, options);
+		}, this);
 	},
 
-	purge: function(paths) {
-		this._cache.purge(paths);
+	purge: function(paths, cb) {
+		this._cache.purge(paths, cb);
 	},
 
 	push: function(paths) {
+		if (!paths)
+			paths = this.getCachedPaths();
 
+		var options = {bypassCache: true};
+		var self = this;
+		var getCb = function(err, resource, path) {
+			if (!err) {
+				self._pipeline.put(path, resource, options);
+			}
+		};
+
+		paths.forEach(function(path) {
+			this._cache.get(path, getCb);
+		}, this);
+	},
+
+	getCachedPaths: function(cb) {
+		this._cache.getCachedPaths(cb);
 	},
 
 	_processQueue: function() {

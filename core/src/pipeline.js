@@ -42,12 +42,19 @@ function indexOfHandler(handlers, len, target) {
 	return -1;
 }
 
+function setPipeline(handler, pipeline) {
+	if (handler.setPipeline)
+		handler.setPipeline(pipeline);
+}
+
 var abstractPipeline = {
 	addFirst: function(name, handler) {
+		setPipeline(handler, this);
 		this._handlers.unshift({name: name, handler: handler});
 	},
 
 	addLast: function(name, handler) {
+		setPipeline(handler, this);
 		this._handlers.push({name: name, handler: handler});
 	},
 
@@ -57,6 +64,8 @@ var abstractPipeline = {
  	name or a handler instance.
  	*/
 	addAfter: function(target, name, handler) {
+		setPipeline(handler, this);
+		
 		var handlers = this._handlers;
 		var len = handlers.length;
 		var i = indexOfHandler(handlers, len, target);
@@ -72,6 +81,8 @@ var abstractPipeline = {
 	a handler instance.
 	*/
 	addBefore: function(target, name, handler) {
+		setPipeline(handler, this);
+
 		var handlers = this._handlers;
 		var len = handlers.length;
 		var i = indexOfHandler(handlers, len, target);
@@ -85,6 +96,8 @@ var abstractPipeline = {
 	Replace the handler specified by target.
 	*/
 	replace: function(target, newName, handler) {
+		setPipeline(handler, this);
+
 		var handlers = this._handlers;
 		var len = handlers.length;
 		var i = indexOfHandler(handlers, len, target);
