@@ -170,4 +170,9 @@ root.rslite.cache = {
 
 root.rslite.handlers.Cache = CacheHandler;
 
+return {
+	install: root.rslite.cache.install,
+	handler: root.rslite.handlers.Cache
+};
+
 }).call(this, this);

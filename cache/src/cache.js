@@ -26,8 +26,6 @@ IndexedDbCache.prototype = {
 			cb(null, "Couldn't open DB");
 			return;
 		}
-
-
 	},
 
 	// TODO: ought we accept callbacks and do some more robust handling?
