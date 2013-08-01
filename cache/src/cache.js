@@ -65,21 +65,25 @@ LocalStorageCache.prototype = {
 	put: function(path, data, cb, options) {
 		if (root.rslite.utils.treatAsJson(data) || typeof data == 'string') {
 			this._db.setItem(localStoragePrefix + path, JSON.stringify(data));
-			cb();
+			if (cb)
+				cb();
 		} else {
-			cb();
+			if (cb)
+				cb();
 		}
 	},
 
 	delete: function(path, cb, options) {
 		this._db.removeItem(localStoragePrefix + path);
-		cb();
+		if (cb)
+			cb();
 	},
 
 	purge: function(paths, cb) {
 		var localStorage = this._db;
 		if (!paths) {
-			for (var i = 0; i < localStorage.length; ++i) {
+			var len = localStorage.length;
+			for (var i = len-1; i >= 0; --i) {
 				var key = localStorage.key(i);
 				if (key.indexOf(localStoragePrefix) == 0) {
 					localStorage.removeItem(key);
@@ -91,7 +95,8 @@ LocalStorageCache.prototype = {
 			});
 		}
 
-		cb();
+		if (cb)
+			cb();
 	},
 
 	getCachedPaths: function(cb) {
