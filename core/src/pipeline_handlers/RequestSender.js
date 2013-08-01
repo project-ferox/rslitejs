@@ -16,12 +16,7 @@ RequestSender.prototype = {
 		// TODO: add additional headers
 		if (options)
 			var headers = options.headers;
-		if (typeof data == 'object' && !(data instanceof Blob || 
-			data instanceof ArrayBuffer ||
-			data instanceof File ||
-			data instanceof FormData ||
-			data instanceof Document ||
-			data instanceof ArrayBufferView)) {
+		if (root.rslite.utils.treatAsJson(data)) {
 			data = JSON.stringify(data);
 
 			if (!headers || !('content-type' in headers))

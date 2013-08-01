@@ -18,3 +18,13 @@ var rslite = function(endpoint) {
 };
 
 root.rslite = rslite;
+
+root.rslite.utils = {};
+rslite.utils.treatAsJson = function(data) {
+	return typeof data == 'object' && !(data instanceof Blob || 
+			data instanceof ArrayBuffer ||
+			data instanceof File ||
+			data instanceof FormData ||
+			data instanceof Document ||
+			data instanceof ArrayBufferView)
+};

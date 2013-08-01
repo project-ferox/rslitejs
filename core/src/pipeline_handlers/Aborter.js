@@ -1,5 +1,7 @@
 function Aborter() {}
 
+Aborter.OFFLINE = {};
+
 // TODO: make sure the aborter errors are the same as
 // the errors you'd get from the RequestHandler.
 Aborter.prototype = {
@@ -9,7 +11,7 @@ Aborter.prototype = {
 
 	get: function() {
 		var future = new root.rslite.Future();
-		future._fail({type: 'offline'}, null);
+		future._resolve(Aborter.OFFLINE);
 
 		return future;
 	},
@@ -18,15 +20,15 @@ Aborter.prototype = {
 		var future = new root.rslite.Future();
 		future.upload = new root.rslite.Future();
 
-		future._fail({type: 'offline'}, null);
-		future.upload._fail({type: 'offline'}, null);
+		future._resolve(Aborter.OFFLINE);
+		future.upload._resolve(Aborter.OFFLINE);
 
 		return future;
 	},
 
 	delete: function() {
 		var future = new root.rslite.Future();
-		future._fail({type: 'offline'}, null);
+		future._resolve(Aborter.OFFLINE);
 
 		return future;
 	}

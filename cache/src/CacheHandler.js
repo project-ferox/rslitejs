@@ -1,5 +1,6 @@
 (function(root) {
 var Future = root.rslite.Future;
+var Aborter = root.rslite.handlers.Aborter;
 
 function CacheHandler() {
 	// use indexedDB as the cache.
@@ -23,20 +24,19 @@ CacheHandler.prototype = {
 
 		var future = new Future();
 		var fullPath = ctx.pipeline.endpoint + '/' + path;
+		var getCompleteCb = function(resource) {
+				if (resource != Aborter.OFFLINE)
+					self._cache.put(fullPath, resource);
+		};
 
 		if (options && options.forceCacheUpdate) {
-			future.complete(function(resource) {
-				self._cache.put(fullPath, resource);
-			});
-
+			future.complete(getCompleteCb);
 			future._resolveLater(ctx.next(path, options));
 		} else {
 			this._cache.get(fullPath, function(resource, err) {
 				if (resource == Cache.MISS || err != null) {
 					if (!options || !options.bypassCache) {
-						future.complete(function(resource) {
-							self._cache.put(fullPath, resource);
-						});
+						future.complete(getCompleteCb);
 					}
 					future._resolveLater(ctx.next(path, options));
 				} else if (err == null) {
@@ -133,7 +133,7 @@ function goOffline() {
 
 root.rslite.cache = {
 	install: function(pipeline, options) {
-		pipeline._aborter = new root.rslite.handlers.Aborter();
+		pipeline._aborter = new Aborter();
 
 		pipeline.goOnline = goOnline.bind(pipeline);
 		pipeline.goOffline = goOffline.bind(pipeline);

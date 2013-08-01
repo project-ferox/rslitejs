@@ -125,7 +125,7 @@ var abstractPipeline = {
 		var i = indexOfHandler(handlers, len, target);
 
 		if (i >= 0)
-			return handlers[i];
+			return handlers[i].handler;
 	}
 };
 

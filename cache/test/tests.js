@@ -45,7 +45,7 @@ asyncTest("Cache stores all transactions while offline", function() {
 
 	var sem = semaphore(2, start);
 	handler1.complete(function() {
-		storage.getHandler('cache').get(createCachePath('documents/testdoc.json'),
+		storage.getHandler('cache')._cache.get(createCachePath('documents/testdoc.json'),
 		function(item) {
 			deepEqual(item, testdoc);
 			sem();
@@ -53,7 +53,7 @@ asyncTest("Cache stores all transactions while offline", function() {
 	}, error);
 
 	handler2.complete(function() {
-		storage.getHandler('cache').get(createCachePath('documents/other.json'),
+		storage.getHandler('cache')._cache.get(createCachePath('documents/other.json'),
 		function(item) {
 			deepEqual(item, {a:'b'});
 			sem();
