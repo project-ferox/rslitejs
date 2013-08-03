@@ -93,11 +93,11 @@ asyncTest("Cache can be forced to update", function() {
 	var future = storage.put('public/documents/testdoc.json', "bad");
 	future.complete(function() {
 		storage.goOnline();
-		var future = storage.get('public/documents/testdoc.json', {forceCacheUpdate: true});
-		future.complete(function(resource) {
-			deepEqual(resource, testdoc);
-			start();
-		}, error);
+		return storage.get('public/documents/testdoc.json', {forceCacheUpdate: true});
+	}, error)
+	.complete(function(resource) {
+		deepEqual(resource, testdoc);
+		start();
 	}, error);
 });
 
