@@ -61,27 +61,40 @@ CallbacksList.prototype = {
 	}
 };
 
-function CallbacksPointer(cursor, callbacksList) {
+function CallbacksPointer(cursor, callbacksList, future) {
 	this._cursor = cursor;
 	this._callbacksList = callbacksList;
 
 	this.complete = this.complete.bind(this);
 	this.error = this.error.bind(this);
+	this._future = future;
 }
 
 CallbacksPointer.prototype = {
+	// TODO: need to check if the future is already complete here as well!!!
 	complete: function(cb, ecb) {
+		if (this._future._completed()) {
+			var result;
+			if (cb && !this._future._error)
+				result = cb.apply(null, this._future._finalArguments);
+
+			if (ecb && this._future._error)
+				result = ecb.apply(null, this._future._finalArguments);
+
+			return result;
+		}
+
 		if (cb)
 			this._callbacksList.complete(this._cursor, cb);
 		if (ecb)
 			this._callbacksList.error(this._cursor, ecb);
 
-		return new CallbacksPointer(this._cursor + 1, this._callbacksList);
+		return new CallbacksPointer(this._cursor + 1, this._callbacksList, this._future);
 	},
 
 	error: function(cb) {
 		this._callbacksList.error(this._cursor, cb);
-		return new CallbacksPointer(this._cursor + 1, this._callbacksList);
+		return new CallbacksPointer(this._cursor + 1, this._callbacksList, this._future);
 	}
 };
 
@@ -108,7 +121,7 @@ CallbackNotifier.prototype = {
 		var canAddMore = this._cursor + 1 < this._callbacksList.size();
 		backs.forEach(function(cb) {
 			var result = cb.apply(null, args);
-			if (result instanceof Future && true) {
+			if (result instanceof Future && canAddMore) {
 				result._addNotifier(new CallbackNotifier(this._cursor + 1, this._callbacksList));
 			}
 		}, this);
@@ -123,7 +136,7 @@ function Future(resolutions) {
 	this._callbacksList = new CallbacksList();
 	this._notifiers = [];
 	this._notifiers.push(new CallbackNotifier(0, this._callbacksList));
-	this._callbacksPointer = new CallbacksPointer(0, this._callbacksList);
+	this._callbacksPointer = new CallbacksPointer(0, this._callbacksList, this);
 
 	this._resolve = this._resolve.bind(this);
 	this._fail = this._fail.bind(this);
