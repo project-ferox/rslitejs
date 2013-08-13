@@ -3,8 +3,12 @@ var Future = root.rslite.Future;
 var Aborter = root.rslite.handlers.Aborter;
 var Cache = root.rslite.priv.Cache;
 
+/**
+Provides caching in the rslite pipeline.
+
+Conflicts between documents are detected at the level below the cache.
+*/
 function CacheHandler() {
-	// use indexedDB as the cache.
 	// TODO: more sensible to have the cache handle the queueing?
 	this._queue = [];
 	this._cache = new Cache(this._processQueue.bind(this));
