@@ -1,0 +1,29 @@
+{
+  "name": "rslitejs",
+  "version": "0.0.1",
+  "description": "light weight remote storage client",
+  "main": "core/dist/rslite-core-debug.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-qunit": "~0.2.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/project-ferox/rslitejs.git"
+  },
+  "keywords": [
+    "remotestorage",
+    "remote",
+    "storage",
+    "javascript"
+  ],
+  "author": "Matt Crinklaw-Vogt",
+  "license": "EPL 1.0"
+}
