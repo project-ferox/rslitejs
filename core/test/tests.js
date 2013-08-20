@@ -21,7 +21,7 @@ continuation();
 
 function continuation() {
 
-var storage = new rslite(endpoint);
+var storage = new rslite(endpoint, testUser);
 test("Instantiate", function() {
 	ok(typeof storage == 'object', 'Successfully create an rslite instance');
 });
@@ -30,7 +30,7 @@ test("Instantiate", function() {
 
 module("Integration tests");
 asyncTest("Getting list of public docs with no token returns successfully", function() {
-	var handler = storage.get(testUser + "/public/documents/");
+	var handler = storage.get("public/documents/");
 
 	handler.complete(function(contents) {
 		ok(typeof contents == 'object', 'Returned contents is a javascript object');
@@ -39,7 +39,7 @@ asyncTest("Getting list of public docs with no token returns successfully", func
 });
 
 asyncTest("Getting a JSON doc returns the converted form of that doc", function() {
-	var handler = storage.get(testUser + "/public/documents/testdoc.json");
+	var handler = storage.get("public/documents/testdoc.json");
 
 	handler.complete(function(contents) {
 		ok(typeof contents == 'object', 'JSON was converted to an object');
@@ -48,7 +48,7 @@ asyncTest("Getting a JSON doc returns the converted form of that doc", function(
 });
 
 asyncTest("Getting a public doc returns that doc", function() {
-	var handler = storage.get(testUser + "/public/documents/testdoc.json");
+	var handler = storage.get("public/documents/testdoc.json");
 
 	handler.complete(function(contents) {
 		deepEqual(contents, testdoc);
@@ -57,12 +57,12 @@ asyncTest("Getting a public doc returns that doc", function() {
 });
 
 asyncTest("Save a doc, then delete it", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken(token);
-	var handler = storage.put(testUser + "/public/documents/testsave.json", testdoc);
+	var handler = storage.put("public/documents/testsave.json", testdoc);
 
 	handler.complete(function(data, xhr) {		
-		var handler = storage.delete(testUser + "/public/documents/testsave.json");
+		var handler = storage.delete("public/documents/testsave.json");
 		ok(true);
 		handler.complete(function(data, xhr) {
 			ok(true);
@@ -72,31 +72,31 @@ asyncTest("Save a doc, then delete it", function() {
 });
 
 asyncTest("Save a doc and get it back, then delete it", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken(token);
 
-	var handler = storage.put(testUser + "/public/documents/saveandget.json", testdoc);
+	var handler = storage.put("public/documents/saveandget.json", testdoc);
 	handler.complete(function(data, xhr) {
-		var handler = storage.get(testUser + "/public/documents/saveandget.json");
+		var handler = storage.get("public/documents/saveandget.json");
 		handler.complete(function(data) {
 			deepEqual(data, testdoc);
 
-			var handler = storage.delete(testUser + "/public/documents/saveandget.json");
+			var handler = storage.delete("public/documents/saveandget.json");
 			handler.complete(start, error);
 		}, error);
 	}, error);
 });
 
 asyncTest("We can save a doc with a specific content-type", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken(token);
 
-	var handler = storage.put(testUser + "/public/documents/ctype.txt", testdoc, {
+	var handler = storage.put("public/documents/ctype.txt", testdoc, {
 		headers: {"content-type": "text/plain"}
 	});
 
 	handler.complete(function(data, xhr) {
-		var handler = storage.get(testUser + "/public/documents/ctype.txt");
+		var handler = storage.get("public/documents/ctype.txt");
 		handler.complete(function(data, xhr) {
 			var header = xhr.getResponseHeader("content-type");
 			equal(header, 'text/plain');
@@ -106,10 +106,10 @@ asyncTest("We can save a doc with a specific content-type", function() {
 });
 
 asyncTest("Providing a bad token for access controlled operations results in an unauthorized response", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken('baf');
 
-	var handler = storage.put(testUser + "/public/documents/shouldfail", testdoc);
+	var handler = storage.put("public/documents/shouldfail", testdoc);
 
 	handler.complete(function(data, hxr) {
 		ok(false);
@@ -121,8 +121,8 @@ asyncTest("Providing a bad token for access controlled operations results in an 
 });
 
 asyncTest("Providing no token for access controlled ops result in an unauthorized response", function() {
-	var storage = new rslite(endpoint);
-	var handler = storage.put(testUser + "/public/documents/shouldfail", testdoc);
+	var storage = new rslite(endpoint, testUser);
+	var handler = storage.put("public/documents/shouldfail", testdoc);
 
 	handler.complete(function(data, hxr) {
 		ok(false);
@@ -134,7 +134,7 @@ asyncTest("Providing no token for access controlled ops result in an unauthorize
 });
 
 asyncTest("We can retrieve blobs", function() {
-	var handler = storage.get(testUser + "/public/documents/image.png", {responseType: 'blob'});
+	var handler = storage.get("public/documents/image.png", {responseType: 'blob'});
 
 	handler.complete(function(data, xhr) {
 		var blob = new Blob([data], {type: 'image/png'});
@@ -151,14 +151,14 @@ asyncTest("We can retrieve blobs", function() {
 });
 
 asyncTest("We can save blobs", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken(token);
 
 	var blob = new Blob(["abc123 where is teh text?"], {type: 'text/plain'});
 
 console.log(blob instanceof Blob);
 
-	var handler = storage.put(testUser + "/public/documents/blob", blob);
+	var handler = storage.put("public/documents/blob", blob);
 
 	handler.complete(function(data, xhr) {
 		ok(true);
@@ -173,10 +173,10 @@ console.log(blob instanceof Blob);
 // });
 
 asyncTest("We can save byte arrays", function() {
-	var storage = new rslite(endpoint);
+	var storage = new rslite(endpoint, testUser);
 	storage.setToken(token);
 	var array = new Uint8Array([1, 2, 3]);
-	storage.put(testUser + "/public/documents/array", array.buffer)
+	storage.put("public/documents/array", array.buffer)
 		.complete(function(data, xhr) {
 			ok(true);
 			start();
@@ -186,7 +186,7 @@ asyncTest("We can save byte arrays", function() {
 });
 
 asyncTest("We can retrieve byte arrays", function() {
-	storage.get(testUser + "/public/documents/array", {responseType: 'arraybuffer'}).complete(
+	storage.get("public/documents/array", {responseType: 'arraybuffer'}).complete(
 		function(data) {
 			var array = new Uint8Array(data);
 			equal(array[2], 3);

@@ -7,12 +7,16 @@ var Document = root.Document || empty;
 var ArrayBufferView = root.ArrayBufferView || empty;
 
 
-var rslite = function(endpoint) {
+var rslite = function(endpoint, user) {
+	if (!user)
+		throw "Must specify a user";
+
 	var pipeline = createPipeline(['setToken', 'get', 'put', 'delete']);
 
-	pipeline.endpoint = endpoint;
-	pipeline.addLast('requestBuilder', new RequestBuilder(endpoint));
+	pipeline.endpoint = endpoint + '/' + user;
+	pipeline.addLast('requestBuilder', new RequestBuilder(pipeline.endpoint));
 	pipeline.addLast('requestSender', new RequestSender());
+	pipeline.user = user;
 
 	return pipeline;
 };
@@ -30,3 +34,4 @@ rslite.utils.treatAsJson = function(data) {
 };
 
 var localStoragePrefix = 'rslCache';
+root.rslite.localStoragePrefix = localStoragePrefix;

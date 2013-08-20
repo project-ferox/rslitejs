@@ -1,4 +1,5 @@
 (function(root) {
+var localStoragePrefix = root.rslite.localStoragePrefix;
 
 function errOpen() {
 	this._openPending = undefined;

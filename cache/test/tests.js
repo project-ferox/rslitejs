@@ -19,12 +19,12 @@ var error = function(e) {
 }
 
 var semaphore = rslite.semaphore;
-var storage = new rslite(endpoint + "/" + testUser);
+var storage = new rslite(endpoint, testUser);
 storage.setToken(token);
 rslite.cache.install(storage);
 
 function createCachePath(path) {
-	return endpoint + "/" + testUser + "/" + path;
+	return testUser + "/" + path;
 }
 
 test("Cache installed", function() {
@@ -40,7 +40,7 @@ test("Cache allows rslite to go online", function() {
 });
 
 asyncTest("Cache stores all transactions while offline", function() {
-	var storage = new rslite(endpoint + "/" + testUser);
+	var storage = new rslite(endpoint, testUser);
 	rslite.cache.install(storage);
 	storage.goOffline();
 
@@ -49,6 +49,7 @@ asyncTest("Cache stores all transactions while offline", function() {
 
 	var sem = semaphore(2, start);
 	handler1.complete(function() {
+		console.log(storage.getHandler('cache')._cache);
 		storage.getHandler('cache')._cache.get(createCachePath('public/documents/athing.json'),
 		function(err, item) {
 			deepEqual(item, {a:{doc:'here'}});

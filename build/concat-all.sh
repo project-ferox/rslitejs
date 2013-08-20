@@ -3,3 +3,7 @@ cd ../cache/build
 
 cd ../../core/build
 ./concatenate.sh
+
+cd ../../conflict_detect/build
+./concatenate.sh
+
