@@ -1,11 +1,142 @@
 // TODO: we need to specify behavior for multiple resolutions...
 (function(root) {
+
+function Callbacks() {
+	this._thenBacks = [];
+	this._errorBacks = [];
+}
+
+Callbacks.prototype = {
+	complete: function(cb) {
+		this._thenBacks.push(cb);
+	},
+
+	error: function(cb) {
+		this._errorBacks.push(cb);
+	}
+};
+
+function CallbacksList() {
+	this._callbacks = [];
+	this._callbacks.push(new Callbacks());
+}
+
+CallbacksList.prototype = {
+	complete: function(cursor, cb) {
+		var callbacks = this._getCallbacks(cursor);
+		callbacks.complete(cb);
+	},
+
+	error: function(cursor, cb) {
+		var callbacks = this._getCallbacks(cursor);
+		callbacks.error(cb);
+	},
+
+	thenBacks: function(cursor) {
+		var cbs = this._callbacks[cursor];
+		return cbs ? cbs._thenBacks : [];
+	},
+
+	errorBacks: function(cursor) {
+		var cbs = this._callbacks[cursor];
+		return cbs ? cbs._errorBacks : [];
+	},
+
+	clearBacks: function(cursor) {
+		delete this._callbacks[cursor];
+	},
+
+	_getCallbacks: function(cursor) {
+		var callbacks = this._callbacks[cursor];
+		if (!callbacks) {
+			callbacks = new Callbacks();
+			this._callbacks[cursor] = callbacks;
+		}
+
+		return callbacks;
+	},
+
+	size: function() {
+		return this._callbacks.length;
+	}
+};
+
+function CallbacksPointer(cursor, callbacksList, future) {
+	this._cursor = cursor;
+	this._callbacksList = callbacksList;
+
+	this.complete = this.complete.bind(this);
+	this.error = this.error.bind(this);
+	this._future = future;
+}
+
+CallbacksPointer.prototype = {
+	// TODO: need to check if the future is already complete here as well!!!
+	complete: function(cb, ecb) {
+		if (this._future._completed()) {
+			var result;
+			if (cb && !this._future._error)
+				result = cb.apply(null, this._future._finalArguments);
+
+			if (ecb && this._future._error)
+				result = ecb.apply(null, this._future._finalArguments);
+
+			return result;
+		}
+
+		if (cb)
+			this._callbacksList.complete(this._cursor, cb);
+		if (ecb)
+			this._callbacksList.error(this._cursor, ecb);
+
+		return new CallbacksPointer(this._cursor + 1, this._callbacksList, this._future);
+	},
+
+	error: function(cb) {
+		this._callbacksList.error(this._cursor, cb);
+		return new CallbacksPointer(this._cursor + 1, this._callbacksList, this._future);
+	}
+};
+
+function CallbackNotifier(cursor, callbacksList) {
+	this._cursor = cursor;
+	this._callbacksList = callbacksList;
+}
+
+CallbackNotifier.prototype = {
+	// TODO: clear cbs
+	resolved: function(args) {
+		var thenBacks = this._callbacksList.thenBacks(this._cursor);
+		this._notify(thenBacks, args);
+		this._callbacksList.clearBacks(this._cursor);
+	},
+
+	failed: function(args) {
+		var errorBacks = this._callbacksList.errorBacks(this._cursor);
+		this._notify(errorBacks, args);
+		this._callbacksList.clearBacks(this._cursor);
+	},
+
+	_notify: function(backs, args) {
+		var canAddMore = this._cursor + 1 < this._callbacksList.size();
+		backs.forEach(function(cb) {
+			var result = cb.apply(null, args);
+			if (result instanceof Future && canAddMore) {
+				result._addNotifier(new CallbackNotifier(this._cursor + 1, this._callbacksList));
+			}
+		}, this);
+	}
+}
+
 function Future(resolutions) {
 	this._resolutions = resolutions || 1;
-	this._errorBacks = [];
-	this._thenBacks = [];
 	this._progressBacks = [];
 	this._error = false;
+
+	this._callbacksList = new CallbacksList();
+	this._notifiers = [];
+	this._notifiers.push(new CallbackNotifier(0, this._callbacksList));
+	this._callbacksPointer = new CallbacksPointer(0, this._callbacksList, this);
 
 	this._resolve = this._resolve.bind(this);
 	this._fail = this._fail.bind(this);
@@ -18,27 +149,31 @@ Future.prototype = {
 	},
 
 	complete: function(cb, ecb) {
+		var result = this._callbacksPointer.complete(cb, ecb);
+
 		if (this._completed()) {
-			if (!this._error) {
-				if (cb)
-					cb.apply(null, this._finalArguments);
-			} else if (ecb) {
-				ecb.apply(null, this._finalArguments);
-			}
-		} else {
-			if (cb)
-				this._thenBacks.push(cb);
-			if (ecb)
-				this._errorBacks.push(ecb);
+			if (cb && !this._error)
+				this._notifyResolved();
+
+			if (ecb && this._error)
+				this._notifyFailed();
 		}
+
+		return result;
+	},
+
+	_addNotifier: function() {
+		this._notifiers.push(new CallbackNotifier(1, this._callbacksList));
 	},
 
 	error: function(cb) {
-		if (this._completed())
-			if (this._error)
-				cb.apply(null, this._finalArguments);
-		else
-			this._errorBacks.push(cb);
+		var result = this._callbacksPointer.error(cb);
+
+		if (this._completed && this._error) {
+			this._notifyFailed();
+		}
+
+		return result;
 	},
 
 	progress: function(cb) {
@@ -60,11 +195,7 @@ Future.prototype = {
 
 		if (!this._completed()) return;
 
-		this._thenBacks.forEach(function(cb) {
-			cb.apply(null, finalArguments);
-		});
-
-		this._clearCallbacks();
+		this._notifyResolved();
 	},
 
 	_fail: function() {
@@ -77,11 +208,19 @@ Future.prototype = {
 
 		if (!this._completed()) return;
 
-		this._errorBacks.forEach(function(cb) {
-			cb.apply(null, finalArguments);
-		});
+		this._notifyFailed();
+	},
 
-		this._clearCallbacks();
+	_notifyResolved: function() {
+		this._notifiers.forEach(function(notifier) {
+			notifier.resolved(this._finalArguments);
+		}, this);
+	},
+
+	_notifyFailed: function() {
+		this._notifiers.forEach(function(notifier) {
+			notifier.failed(this._finalArguments);
+		}, this);
 	},
 
 	_progress: function() {
@@ -89,12 +228,6 @@ Future.prototype = {
 		this._progressBacks.forEach(function(cb) {
 			cb.apply(null, args);
 		});
-	},
-
-	_clearCallbacks: function() {
-		this._errorBacks = [];
-		this._thenBacks = [];
-		this._progressBacks = [];
 	}
 };
 
