@@ -69,6 +69,13 @@ ConflictDetect.prototype = {
 	_getOrPutComplete: function(data, xhr) {
 		// get the etag header
 		// stuff it into last-known-revs
+		var rev = xhr.getResponseHeader('ETag');
+		var lastRev = this._lastKnownRevs[path];
+		if (!lastRev) {
+			lastRev = this._lastKnownRevs[path] = {};
+		}
+
+		lastRev.rev = rev;
 	}
 };
 
