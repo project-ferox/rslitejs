@@ -29,10 +29,10 @@ CacheHandler.prototype = {
 		}
 
 		var future = new Future();
-		var fullPath = ctx.pipeline.endpoint + '/' + path;
+		//var fullPath = ctx.pipeline.endpoint + '/' + path;
 		var getCompleteCb = function(resource, xhr) {
 				if (resource != Aborter.OFFLINE)
-					self._cache.put(fullPath, resource, null, options, xhr);
+					self._cache.put(path, resource, null, options);
 		};
 
 		if (options && options.forceCacheUpdate) {
@@ -40,7 +40,7 @@ CacheHandler.prototype = {
 			future._resolveLater(ctx.next(path, options));
 		} else {
 			var checkCacheOnly = options && options.checkCacheOnly;
-			this._cache.get(fullPath, function(err, resource) {
+			this._cache.get(path, function(err, resource) {
 				if ((resource == Cache.MISS || err != null) && !checkCacheOnly) {
 					if (!options || !options.bypassCache) {
 						future.complete(getCompleteCb);
@@ -70,8 +70,8 @@ CacheHandler.prototype = {
 
 			var count = cacheOnly ? 1 : 2;
 			var future = new Future(count);
-			var fullPath = ctx.pipeline.endpoint + '/' + path;
-			this._cache.put(fullPath, data, function(err) {
+			//var fullPath = ctx.pipeline.endpoint + '/' + path;
+			this._cache.put(path, data, function(err) {
 				if (!err)
 					future._resolve();
 				else
@@ -94,8 +94,8 @@ CacheHandler.prototype = {
 	delete: function(ctx, path, options) {
 		if (!options || !options.retainCached) {
 			var future = new Future(2);
-			var fullPath = ctx.pipeline.endpoint + '/' + path;
-			this._cache.delete(fullPath, function(err) {
+			//var fullPath = ctx.pipeline.endpoint + '/' + path;
+			this._cache.delete(path, function(err) {
 				if (!err)
 					future._resolve();
 				else

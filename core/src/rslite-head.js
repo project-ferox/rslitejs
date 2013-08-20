@@ -28,3 +28,5 @@ rslite.utils.treatAsJson = function(data) {
 			data instanceof Document ||
 			data instanceof ArrayBufferView)
 };
+
+var localStoragePrefix = 'rslCache';

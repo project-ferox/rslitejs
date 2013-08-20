@@ -41,14 +41,6 @@ IndexedDbCache.prototype = {
 };
 
 var MISS = IndexedDbCache.MISS = {};
-var localStoragePrefix = 'rslCache';
-var meta = localStorage.getItem(localStoragePrefix + 'meta') || {};
-if (!meta.lastKnownRevs)
-	meta.lastKnownRevs = {};
-
-window.onunload = function() {
-	localStorage.setItem(localStoragePrefix + 'meta', meta);
-};
 
 // For now the LocalStorageCache only caches text and json.
 function LocalStorageCache(openListener) {
@@ -69,7 +61,7 @@ LocalStorageCache.prototype = {
 	},
 
 	// TODO: should be able to notify listeners on a given path.
-	put: function(path, data, cb, options, xhr) {
+	put: function(path, data, cb, options) {
 		if (root.rslite.utils.treatAsJson(data) || typeof data == 'string') {
 			this._db.setItem(localStoragePrefix + path, JSON.stringify(data));
 			if (cb)
