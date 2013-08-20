@@ -26,9 +26,9 @@ CacheHandler.prototype = {
 
 		var future = new Future();
 		var fullPath = ctx.pipeline.endpoint + '/' + path;
-		var getCompleteCb = function(resource) {
+		var getCompleteCb = function(resource, xhr) {
 				if (resource != Aborter.OFFLINE)
-					self._cache.put(fullPath, resource);
+					self._cache.put(fullPath, resource, null, options, xhr);
 		};
 
 		if (options && options.forceCacheUpdate) {
@@ -140,6 +140,8 @@ CacheHandler.prototype = {
 		this._cache.purge(paths, cb);
 	},
 
+	// TODO: only push if current version matches
+	// our last known version?
 	push: function(paths) {
 		if (!paths)
 			paths = this.getCachedPaths();
